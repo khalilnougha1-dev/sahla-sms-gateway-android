@@ -6,19 +6,17 @@ import java.io.BufferedReader
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** Thin HTTP client for the Sahla SMS gateway endpoints. */
 object Api {
-
     data class Pending(val id: String, val recipient: String, val body: String, val simSlot: Int?)
 
     private fun open(base: String, path: String, method: String, apiKey: String?): HttpURLConnection {
-        val conn = URL(base.trimEnd('/') + path).openConnection() as HttpURLConnection
-        conn.requestMethod = method
-        conn.connectTimeout = 15000
-        conn.readTimeout = 30000
-        conn.setRequestProperty("Content-Type", "application/json")
-        if (apiKey != null) conn.setRequestProperty("x-api-key", apiKey)
-        return conn
+        return (URL(base.trimEnd('/') + path).openConnection() as HttpURLConnection).apply {
+            requestMethod = method
+            connectTimeout = 15000
+            readTimeout = 30000
+            setRequestProperty("Content-Type", "application/json")
+            if (apiKey != null) setRequestProperty("x-api-key", apiKey)
+        }
     }
 
     private fun send(conn: HttpURLConnection, payload: JSONObject?): Pair<Int, String> {
@@ -33,51 +31,27 @@ object Api {
         return code to text
     }
 
-    /** POST /api/public/v1/pair — exchanges a pairing code for a device API key. */
-    fun pair(
-        base: String,
-        code: String,
-        model: String,
-        androidVersion: String,
-        simCount: Int,
-    ): Result<Pair<String, String>> = runCatching {
-        val payload = JSONObject()
-            .put("code", code)
-            .put("model", model)
-            .put("androidVersion", androidVersion)
-            .put("simCount", simCount)
+    fun pair(base: String, code: String, model: String, androidVersion: String, simCount: Int): Result<Pair<String, String>> = runCatching {
+        val payload = JSONObject().put("code", code).put("model", model)
+            .put("androidVersion", androidVersion).put("simCount", simCount).put("batteryLevel", 100)
         val (status, text) = send(open(base, "/api/public/v1/pair", "POST", null), payload)
-        if (status !in 200..299) error("Pairing failed [$status]: $text")
+        if (status !in 200..299) error(JSONObject(text).optJSONObject("error")?.optString("message") ?: "Pairing failed [$status]")
         val data = JSONObject(text).getJSONObject("data")
         data.getString("deviceId") to data.getString("apiKey")
     }
 
-    /** GET /api/public/v1/gateway-poll — pulls messages queued for this device. */
-    fun poll(base: String, apiKey: String): Result<List<Pending>> = runCatching {
-        val (status, text) = send(open(base, "/api/public/v1/gateway-poll", "GET", apiKey), null)
+    fun poll(base: String, apiKey: String, deviceId: String): Result<List<Pending>> = runCatching {
+        val payload = JSONObject().put("deviceId", deviceId).put("batteryLevel", 100).put("signalStrength", 4).put("limit", 10)
+        val (status, text) = send(open(base, "/api/public/v1/gateway-poll", "POST", apiKey), payload)
         if (status !in 200..299) error("Poll failed [$status]: $text")
-        val arr: JSONArray = JSONObject(text).optJSONObject("data")?.optJSONArray("messages")
-            ?: JSONObject(text).optJSONArray("messages")
-            ?: JSONArray()
+        val arr: JSONArray = JSONObject(text).optJSONObject("data")?.optJSONArray("messages") ?: JSONArray()
         (0 until arr.length()).map { i ->
             val m = arr.getJSONObject(i)
-            Pending(
-                id = m.getString("id"),
-                recipient = m.getString("recipient"),
-                body = m.getString("body"),
-                simSlot = if (m.isNull("simSlot")) null else m.getInt("simSlot"),
-            )
+            Pending(m.getString("id"), m.getString("recipient"), m.getString("body"), if (m.isNull("simSlot")) null else m.getInt("simSlot"))
         }
     }
 
-    /** POST /api/public/v1/message-status — reports sent / delivered / failed back to the dashboard. */
-    fun reportStatus(
-        base: String,
-        apiKey: String,
-        messageId: String,
-        status: String,
-        error: String? = null,
-    ): Result<Unit> = runCatching {
+    fun reportStatus(base: String, apiKey: String, messageId: String, status: String, error: String? = null): Result<Unit> = runCatching {
         val payload = JSONObject().put("messageId", messageId).put("status", status)
         if (error != null) payload.put("errorReason", error)
         val (code, text) = send(open(base, "/api/public/v1/message-status", "POST", apiKey), payload)

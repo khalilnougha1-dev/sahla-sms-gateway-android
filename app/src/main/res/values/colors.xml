@@ -1,0 +1,13 @@
+<resources>
+    <color name="navy">#101827</color>
+    <color name="navy_header">#1D293B</color>
+    <color name="surface">#282D39</color>
+    <color name="surface_alt">#313746</color>
+    <color name="orange">#CE5A00</color>
+    <color name="orange_light">#F07917</color>
+    <color name="text_primary">#F6F7FA</color>
+    <color name="text_secondary">#AAB2C3</color>
+    <color name="stroke">#525C70</color>
+    <color name="green">#43B45C</color>
+    <color name="red">#FF5252</color>
+</resources>

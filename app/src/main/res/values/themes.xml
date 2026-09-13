@@ -1,3 +1,11 @@
 <resources>
-    <style name="Theme.SahlaGateway" parent="Theme.Material3.DayNight" />
+    <style name="Theme.SahlaGateway" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">@color/orange</item>
+        <item name="android:navigationBarColor">#090D14</item>
+        <item name="android:statusBarColor">@color/navy</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="colorPrimary">@color/orange</item>
+        <item name="colorSecondary">@color/orange_light</item>
+    </style>
 </resources>
