@@ -10,4 +10,5 @@
     <color name="stroke">#525C70</color>
     <color name="green">#43B45C</color>
     <color name="red">#FF5252</color>
+    <color name="icon_background">#0B1F3A</color>
 </resources>
