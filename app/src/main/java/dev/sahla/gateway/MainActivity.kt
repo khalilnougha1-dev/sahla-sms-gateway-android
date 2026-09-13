@@ -137,13 +137,14 @@ class MainActivity : AppCompatActivity() {
     private fun renderSettings(host: FrameLayout) {
         val (scroll,col)=page("Settings", "⚙")
         col.addView(section("ACCOUNT"))
-        col.addView(setting("Device ID", store.deviceId ?: "—")); col.addView(setting("API Key", maskKey(store.apiKey)))
+        col.addView(copySetting("Device ID", store.deviceId ?: "—", store.deviceId)); col.addView(copySetting("API Key", maskKey(store.apiKey), store.apiKey))
+        col.addView(copySetting("Server URL", store.baseUrl, store.baseUrl))
         val name=setting("Device Name",store.deviceName); name.setOnClickListener { editName() }; col.addView(name)
         col.addView(outline("Disconnect Device") { stopGateway(); store.clear(); currentTab="dashboard"; render() }.apply { setTextColor(Color.rgb(255,82,82)) },match(54,16,10))
         col.addView(section("GATEWAY")); col.addView(switch("Gateway Enabled",store.gatewayEnabled) { store.gatewayEnabled=it; if(it) startGateway() else stopGateway() },match(60,8,5))
         col.addView(simSelector())
         col.addView(section("SMS")); col.addView(switch("Receive SMS",store.receiveSms) { store.receiveSms=it },match(60,8,4)); col.addView(setting("Send Delay","${store.sendDelaySeconds}s between each SMS").apply { setOnClickListener { chooseDelay() } })
-        col.addView(section("SYSTEM")); col.addView(switch("Sticky Notification",store.stickyNotification) { store.stickyNotification=it; if(store.gatewayEnabled) startGateway() },match(60,8,4)); col.addView(setting("App Version","2.0 (Build 3)")); col.addView(setting("About","sahla-sms-gateway").apply { setOnClickListener { openUrl("https://github.com/khalilnougha1-dev/sahla-sms-gateway-android") } }); col.addView(setting("Check for Updates","GitHub Releases").apply { setOnClickListener { openUrl("https://github.com/khalilnougha1-dev/sahla-sms-gateway-android/releases/latest") } }); col.addView(section("LEGAL")); col.addView(setting("Privacy Policy",store.baseUrl)); col.addView(space(30))
+        col.addView(section("SYSTEM")); col.addView(switch("Sticky Notification",store.stickyNotification) { store.stickyNotification=it; if(store.gatewayEnabled) startGateway() },match(60,8,4)); col.addView(setting("App Version","2.1 (Build 4)")); col.addView(setting("About","sahla-sms-gateway").apply { setOnClickListener { openUrl("https://github.com/khalilnougha1-dev/sahla-sms-gateway-android") } }); col.addView(setting("Check for Updates","GitHub Releases").apply { setOnClickListener { openUrl("https://github.com/khalilnougha1-dev/sahla-sms-gateway-android/releases/latest") } }); col.addView(section("LEGAL")); col.addView(setting("Privacy Policy",store.baseUrl)); col.addView(space(30))
         scroll.addView(col); host.addView(scroll)
     }
 
@@ -170,6 +171,22 @@ class MainActivity : AppCompatActivity() {
     private fun switch(label:String,checked:Boolean,onChange:(Boolean)->Unit)=Switch(this).apply { text=label; textSize=18f; setTextColor(white); isChecked=checked; setPadding(dp(4),0,dp(4),0); setOnCheckedChangeListener{_,v->onChange(v)} }
     private fun section(label:String)=text(label,14,orange).apply { gravity=Gravity.END; setTypeface(null,Typeface.BOLD); setPadding(dp(18),dp(22),dp(18),dp(4)) }
     private fun setting(label:String,value:String)=column(2).apply { setPadding(dp(20),dp(13),dp(20),dp(13)); addView(title(label,19).apply { gravity=Gravity.END }); addView(text(value,14,muted).apply { gravity=Gravity.END; maxLines=1 }) }
+    private fun copySetting(label:String,display:String,value:String?)=column(2).apply {
+        setPadding(dp(20),dp(13),dp(20),dp(13))
+        val head=row()
+        val btn=text("\u29C9 Copy",14,orange).apply { setTypeface(null,Typeface.BOLD); setPadding(dp(10),dp(6),dp(10),dp(6)); background=getDrawable(R.drawable.field); setOnClickListener { copyValue(label,value) } }
+        head.addView(btn,LinearLayout.LayoutParams(-2,-2))
+        head.addView(title(label,19).apply { gravity=Gravity.END },LinearLayout.LayoutParams(0,-2,1f))
+        addView(head,LinearLayout.LayoutParams(-1,-2))
+        addView(text(display,14,muted).apply { gravity=Gravity.END; maxLines=2 })
+        setOnLongClickListener { copyValue(label,value); true }
+    }
+    private fun copyValue(label:String,value:String?) {
+        if(value.isNullOrBlank()) { toast("Nothing to copy yet"); return }
+        val clipboard=getSystemService(android.content.ClipboardManager::class.java)
+        clipboard?.setPrimaryClip(android.content.ClipData.newPlainText(label,value))
+        toast("$label copied")
+    }
     private fun space(h:Int)=Space(this).apply { minimumHeight=dp(h) }
     private fun match(height:Int,top:Int=0,bottom:Int=0)=LinearLayout.LayoutParams(-1,if(height<0)-2 else dp(height)).apply { topMargin=dp(top); bottomMargin=dp(bottom) }
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
