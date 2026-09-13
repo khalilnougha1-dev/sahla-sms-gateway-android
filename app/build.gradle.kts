@@ -11,13 +11,26 @@ android {
         applicationId = "dev.sahla.gateway"
         minSdk = 24
         targetSdk = 34
-        versionCode = 4
-        versionName = "2.1"
+        versionCode = 5
+        versionName = "2.2"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("sahla-release.jks")
+            storePassword = System.getenv("SAHLA_STORE_PASSWORD") ?: "sahlasms2026"
+            keyAlias = "sahla"
+            keyPassword = System.getenv("SAHLA_KEY_PASSWORD") ?: "sahlasms2026"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
