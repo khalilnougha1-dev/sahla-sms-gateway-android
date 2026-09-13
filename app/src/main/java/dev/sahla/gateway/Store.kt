@@ -36,5 +36,5 @@ class Store(context: Context) {
     val paired: Boolean get() = !apiKey.isNullOrBlank() && !deviceId.isNullOrBlank()
     fun clear() = prefs.edit().remove("apiKey").remove("deviceId").apply()
 
-    companion object { const val DEFAULT_BASE = "https://sahla-sms-gateway.lovable.app" }
+    companion object { const val DEFAULT_BASE = "https://sms.sahlapay.dz" }
 }
