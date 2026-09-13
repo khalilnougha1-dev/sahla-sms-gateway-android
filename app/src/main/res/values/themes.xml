@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.SahlaGateway" parent="Theme.Material3.DayNight" />
+</resources>
